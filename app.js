@@ -13,6 +13,7 @@
 // 1. CONSTANTS
 // ─────────────────────────────────
 "use strict";
+// Powered by NVIDIA GenAI (e.g. nvapi-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX)
 const CONSTANTS = Object.freeze({
   STADIUM_CAPACITY: 85000,
   UPDATE_INTERVAL_MS: 10000,
@@ -542,7 +543,7 @@ async function callStadiumAI(systemPrompt, userQuery) {
   }
 
   const makeRequest = async (model, key) => {
-    const response = await fetch("/api/chat", {
+    const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1124,7 +1125,7 @@ async function planJourney() {
 
   const prompt = `Plan my journey from ${from} to ${to}. Consider current crowd levels and eco-friendly options. Keep it extremely concise and format it as a short HTML snippet with a <h4><i data-lucide="map"></i> AI Journey Plan</h4> and steps.`;
   const response = await callStadiumAI(SYSTEM_PROMPTS['fan'], prompt);
-  resultEl.innerHTML = `<div class="ai-tip animate__animated animate__fadeIn">${response}</div>`;
+  resultEl.innerHTML = `<div class="ai-tip animate__animated animate__fadeIn">${DOMPurify.sanitize(response)}</div>`;
   setTimeout(() => lucide.createIcons(), 50);
 }
 
@@ -1338,7 +1339,7 @@ async function optimizeDeployment() {
   });
   renderVolunteerStations('volunteer-stations');
   if (resultEl) {
-    resultEl.innerHTML = `<div class="ai-tip animate__animated animate__fadeIn"><strong>AI:</strong> ${response}</div>`;
+    resultEl.innerHTML = `<div class="ai-tip animate__animated animate__fadeIn"><strong>AI:</strong> ${DOMPurify.sanitize(response)}</div>`;
   }
   showToast('✅ Volunteer deployment optimized', 'success');
 }
@@ -1761,7 +1762,7 @@ async function planAccessibleRoute() {
   const filterText = filters.length > 0 ? ` Needs: ${filters.join(', ')}.` : '';
   const prompt = `Plan an accessible route from ${from} to ${to}.${filterText} Include elevators, ramps, and rest points. Format as a short HTML snippet.`;
   const response = await callStadiumAI(SYSTEM_PROMPTS['accessibility'], prompt);
-  resultEl.innerHTML = `<div class="ai-tip animate__animated animate__fadeIn">${response}</div>`;
+  resultEl.innerHTML = `<div class="ai-tip animate__animated animate__fadeIn">${DOMPurify.sanitize(response)}</div>`;
 }
 
 /**
