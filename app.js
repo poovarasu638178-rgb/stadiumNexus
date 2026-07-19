@@ -534,15 +534,6 @@ function saveSettings() {
  * @param {string} userQuery - sanitized user input
  * @returns {Promise<string>} AI response text
  */
-/**
- * Calls the NVIDIA Llama 3 API with fallback capabilities.
- * Incorporates robust error handling (try/catch) and implements retry logic.
- * @async
- * @param {string} systemPrompt - The system prompt context for the AI
- * @param {string} userQuery - The user's query or prompt
- * @returns {Promise<string>} The AI's response text
- * @throws {Error} If both primary and fallback models fail
- */
 async function callStadiumAI(systemPrompt, userQuery) {
   if (!API_KEY) {
     showToast('API Key missing. Please configure AI settings.', 'error');
@@ -1133,8 +1124,7 @@ async function planJourney() {
 
   const prompt = `Plan my journey from ${from} to ${to}. Consider current crowd levels and eco-friendly options. Keep it extremely concise and format it as a short HTML snippet with a <h4><i data-lucide="map"></i> AI Journey Plan</h4> and steps.`;
   const response = await callStadiumAI(SYSTEM_PROMPTS['fan'], prompt);
-  const html = `<div class="ai-tip animate__animated animate__fadeIn">${response}</div>`;
-  resultEl.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html;
+  resultEl.innerHTML = `<div class="ai-tip animate__animated animate__fadeIn">${response}</div>`;
   setTimeout(() => lucide.createIcons(), 50);
 }
 
@@ -1348,8 +1338,7 @@ async function optimizeDeployment() {
   });
   renderVolunteerStations('volunteer-stations');
   if (resultEl) {
-    const html = `<div class="ai-tip animate__animated animate__fadeIn"><strong>AI:</strong> ${response}</div>`;
-    resultEl.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html;
+    resultEl.innerHTML = `<div class="ai-tip animate__animated animate__fadeIn"><strong>AI:</strong> ${response}</div>`;
   }
   showToast('✅ Volunteer deployment optimized', 'success');
 }
@@ -1772,8 +1761,7 @@ async function planAccessibleRoute() {
   const filterText = filters.length > 0 ? ` Needs: ${filters.join(', ')}.` : '';
   const prompt = `Plan an accessible route from ${from} to ${to}.${filterText} Include elevators, ramps, and rest points. Format as a short HTML snippet.`;
   const response = await callStadiumAI(SYSTEM_PROMPTS['accessibility'], prompt);
-  const html = `<div class="ai-tip animate__animated animate__fadeIn">${response}</div>`;
-  resultEl.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html;
+  resultEl.innerHTML = `<div class="ai-tip animate__animated animate__fadeIn">${response}</div>`;
 }
 
 /**
