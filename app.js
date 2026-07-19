@@ -356,6 +356,8 @@ function calculateCarbonFootprint(mode, distance) {
  * @param {string} tabId - The ID of the tab section to display.
  */
 function showTab(tabId) {
+  setTimeout(() => lucide.createIcons(), 50);
+
   performance.mark('tab-switch-start');
   const tabs = ['fan-portal', 'command-center', 'accessibility-hub', 'transport-hub'];
   tabs.forEach(id => {
@@ -432,7 +434,7 @@ function showToast(message, type = 'info', duration = 4000) {
   if (!container) return;
   const toast = document.createElement('div');
   toast.className = `toast toast-${type} animate__animated animate__fadeInRight`;
-  const icons = { success: '✅', warning: '⚠️', error: '❌', info: 'ℹ️' };
+  const icons = { success: '✅', warning: '<i data-lucide="alert-triangle"></i>', error: '❌', info: 'ℹ️' };
   toast.innerHTML = `<span class="toast-icon">${icons[type] || 'ℹ️'}</span><span class="toast-text">${message}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
@@ -451,6 +453,55 @@ const SYSTEM_PROMPTS = {
   command: 'You are StadiumNexus Operations AI for FIFA World Cup 2026. Help organizers with incident management, crowd control, volunteer deployment, and operational decisions. Be professional, data-driven, and action-oriented. Use current stadium data to inform responses.',
   accessibility: 'You are the FIFA World Cup 2026 Accessibility Assistant. Help users with disabilities navigate the stadium, find accessible facilities, and enjoy the match. Be compassionate, detailed, and helpful. Always prioritize safety and comfort.'
 };
+
+const NVIDIA_API_KEY = "nvapi-YOUR_KEY_HERE"; // get free at build.nvidia.com
+const MODEL_PRIMARY = "nvidia/llama-3.3-nemotron-super-49b-v1.5";
+const MODEL_FALLBACK = "meta/llama-3.1-8b-instruct";
+
+/**
+ * @function callStadiumAI
+ * @description Shared AI call function for all StadiumNexus AI features.
+ * Tries MODEL_PRIMARY first, retries once with MODEL_FALLBACK on failure,
+ * then returns a graceful fallback string only if both fail.
+ * @param {string} systemPrompt - role-specific system prompt
+ * @param {string} userQuery - sanitized user input
+ * @returns {Promise<string>} AI response text
+ */
+async function callStadiumAI(systemPrompt, userQuery) {
+  const attempt = async (model) => {
+    const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${NVIDIA_API_KEY}`
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userQuery }
+        ],
+        max_tokens: 800,
+        temperature: 0.7
+      })
+    });
+    if (!response.ok) throw new Error(`API returned ${response.status}`);
+    const data = await response.json();
+    return data.choices[0].message.content;
+  };
+
+  try {
+    return await attempt(MODEL_PRIMARY);
+  } catch (err) {
+    console.warn(`Primary model failed (${MODEL_PRIMARY}), trying fallback:`, err);
+    try {
+      return await attempt(MODEL_FALLBACK);
+    } catch (err2) {
+      console.error("Both NVIDIA models failed:", err2);
+      return "I'm having trouble connecting right now — please try again in a moment.";
+    }
+  }
+}
 
 const CHAT_CHIPS = {
   fan: [
@@ -517,42 +568,12 @@ async function sendChatMessage(tabKey, userMessage) {
   renderChatMessage(container, { role: 'user', content: sanitized });
   showTypingIndicator(container);
 
-  // API key handled by proxy - add your key here
-  const API_KEY = 'YOUR_ANTHROPIC_API_KEY';
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        system: SYSTEM_PROMPTS[tabKey],
-        messages: state.chatHistories[tabKey].map(m => ({ role: m.role, content: m.content }))
-      })
-    });
-
-    hideTypingIndicator(container);
-
-    if (response.ok) {
-      const data = await response.json();
-      const aiReply = data.content[0].text;
-      state.chatHistories[tabKey].push({ role: 'assistant', content: aiReply });
-      renderChatMessage(container, { role: 'assistant', content: aiReply });
-    } else {
-      throw new Error(`API ${response.status}`);
-    }
-  } catch (_err) {
-    hideTypingIndicator(container);
-    const fallback = "I'm having trouble connecting right now. Please try again in a moment. In the meantime, you can check the stadium map or visit any information desk for assistance.";
-    state.chatHistories[tabKey].push({ role: 'assistant', content: fallback });
-    renderChatMessage(container, { role: 'assistant', content: fallback });
-  }
+  const aiReply = await callStadiumAI(SYSTEM_PROMPTS[tabKey], sanitized);
+  
+  hideTypingIndicator(container);
+  
+  state.chatHistories[tabKey].push({ role: 'assistant', content: aiReply });
+  renderChatMessage(container, { role: 'assistant', content: aiReply });
 }
 
 /**
@@ -569,7 +590,7 @@ function renderChatMessage(container, message) {
 
   const avatar = document.createElement('div');
   avatar.className = 'chat-avatar';
-  avatar.textContent = message.role === 'user' ? '👤' : '🤖';
+  avatar.textContent = message.role === 'user' ? '👤' : '<i data-lucide="bot"></i>';
   avatar.setAttribute('aria-hidden', 'true');
 
   const bubble = document.createElement('div');
@@ -593,7 +614,7 @@ function showTypingIndicator(container) {
   const div = document.createElement('div');
   div.className = 'chat-message assistant';
   div.id = 'typing-indicator';
-  div.innerHTML = '<div class="chat-avatar" aria-hidden="true">🤖</div><div class="chat-bubble typing-indicator"><span></span><span></span><span></span></div>';
+  div.innerHTML = '<div class="chat-avatar" aria-hidden="true"><i data-lucide="bot"></i></div><div class="chat-bubble typing-indicator"><span></span><span></span><span></span></div>';
   container.appendChild(div);
   container.scrollTop = container.scrollHeight;
 }
@@ -685,7 +706,7 @@ function updateCrowdDensity() {
 
   if (warningZone) {
     const optGate = getOptimalGate(state.crowdData);
-    showToast(`⚠️ ${warningZone} at ${state.crowdData[warningZone]}% — use ${optGate} instead`, 'warning');
+    showToast(`<i data-lucide="alert-triangle"></i> ${warningZone} at ${state.crowdData[warningZone]}% — use ${optGate} instead`, 'warning');
   }
   performance.mark('crowd-update-end');
 }
@@ -737,9 +758,9 @@ function updateCrowdRecommendation() {
   const highZones = CONSTANTS.ZONES.filter(z => state.crowdData[z] > 75);
   const optimal = getOptimalGate(state.crowdData);
   if (highZones.length > 0) {
-    el.innerHTML = `<div class="ai-tip">🤖 <strong>AI Recommendation:</strong> ${highZones[0]} is at ${state.crowdData[highZones[0]]}% capacity. We recommend entering via the ${optimal} zone for a smoother experience.</div>`;
+    el.innerHTML = `<div class="ai-tip"><i data-lucide="bot"></i> <strong>AI Recommendation:</strong> ${highZones[0]} is at ${state.crowdData[highZones[0]]}% capacity. We recommend entering via the ${optimal} zone for a smoother experience.</div>`;
   } else {
-    el.innerHTML = '<div class="ai-tip">🤖 <strong>AI:</strong> All zones are at comfortable capacity levels. Enjoy the match!</div>';
+    el.innerHTML = '<div class="ai-tip"><i data-lucide="bot"></i> <strong>AI:</strong> All zones are at comfortable capacity levels. Enjoy the match!</div>';
   }
 }
 
@@ -864,7 +885,7 @@ function getAINavigation() {
     <div class="ai-tip animate__animated animate__fadeIn">
       <h4>🧭 AI Navigation</h4>
       <p><strong>From:</strong> ${from} → <strong>To:</strong> ${to}</p>
-      <p>📍 Recommended route via <strong>${optimal}</strong> zone (lowest crowd: ${state.crowdData[optimal]}%)</p>
+      <p><i data-lucide="map-pin"></i> Recommended route via <strong>${optimal}</strong> zone (lowest crowd: ${state.crowdData[optimal]}%)</p>
       <p>⏱️ Estimated walking time: ${Math.floor(getRandomInRange(3, 12))} minutes</p>
       <p>💡 Tip: Follow the blue floor markers for the fastest path.</p>
     </div>`;
@@ -918,7 +939,7 @@ function renderTransportBoard(containerId) {
         <div class="density-fill" style="width:${t.capacity}%;background:${getCrowdColor(getCrowdLevel(t.capacity))}"></div>
       </div> ${t.type === 'Bike' ? `${t.capacity} avail` : `${t.capacity}%`}</td>
       <td><span class="badge ${statusClass}">${t.status}</span></td>
-      <td>${isEco ? '<span class="badge badge-success">🌱 0 kg</span>' : `${t.co2PerPerson} kg`}</td>
+      <td>${isEco ? '<span class="badge badge-success"><i data-lucide="leaf"></i> 0 kg</span>' : `${t.co2PerPerson} kg`}</td>
     </tr>`;
   });
 
@@ -936,8 +957,8 @@ function renderTransportOptions(containerId) {
   if (!container) return;
 
   const options = [
-    { icon: '🚇', name: 'Metro', time: '12 min', cost: '$2.75', co2: '0.02 kg', eco: false },
-    { icon: '🚌', name: 'Bus', time: '25 min', cost: '$1.50', co2: '0.08 kg', eco: false },
+    { icon: '<i data-lucide="train"></i>', name: 'Metro', time: '12 min', cost: '$2.75', co2: '0.02 kg', eco: false },
+    { icon: '<i data-lucide="bus"></i>', name: 'Bus', time: '25 min', cost: '$1.50', co2: '0.08 kg', eco: false },
     { icon: '🚐', name: 'Shuttle', time: '15 min', cost: 'Free', co2: '0.08 kg', eco: false },
     { icon: '🚶', name: 'Walk', time: '35 min', cost: 'Free', co2: '0 kg', eco: true }
   ];
@@ -954,10 +975,10 @@ function renderTransportOptions(containerId) {
         <div class="transport-meta">
           <span>⏱️ ${opt.time}</span>
           <span>💰 ${opt.cost}</span>
-          <span>🌿 ${opt.co2}</span>
+          <span><i data-lucide="leafy-green"></i> ${opt.co2}</span>
         </div>
       </div>
-      ${opt.eco ? '<span class="badge badge-success">🌱 Greenest</span>' : ''}
+      ${opt.eco ? '<span class="badge badge-success"><i data-lucide="leaf"></i> Greenest</span>' : ''}
     `;
     frag.appendChild(card);
   });
@@ -969,7 +990,7 @@ function renderTransportOptions(containerId) {
  * @function planJourney
  * @description AI-powered journey planner using form inputs.
  */
-function planJourney() {
+async function planJourney() {
   const fromEl = document.getElementById('journey-from');
   const toEl = document.getElementById('journey-to');
   const resultEl = document.getElementById('journey-result');
@@ -982,28 +1003,10 @@ function planJourney() {
 
   resultEl.innerHTML = '<div class="loading-spinner"></div>';
 
-  setTimeout(() => {
-    const metroCO2 = calcCO2('metro', 15);
-    const carCO2 = calcCO2('car', 15);
-    const saved = (carCO2 - metroCO2).toFixed(2);
-    resultEl.innerHTML = `
-      <div class="ai-tip animate__animated animate__fadeIn">
-        <h4>🗺️ AI Journey Plan</h4>
-        <p><strong>${from}</strong> → <strong>${to}</strong></p>
-        <div class="journey-steps">
-          <p>1️⃣ Walk to nearest Metro station (5 min)</p>
-          <p>2️⃣ Take Metro Line 1 — Stadium Express (12 min)</p>
-          <p>3️⃣ Exit at Stadium Station, follow signs to Gate A (3 min)</p>
-        </div>
-        <div class="co2-comparison">
-          <span>🚇 Metro: ${metroCO2} kg CO₂</span>
-          <span>🚗 Car: ${carCO2} kg CO₂</span>
-          <span class="badge badge-success">🌱 Save ${saved} kg CO₂</span>
-        </div>
-      </div>`;
-  }, 800);
-
-  sendChatMessage('fan', `Plan my journey from ${from} to ${to}. Consider current crowd levels and eco-friendly options.`);
+  const prompt = `Plan my journey from ${from} to ${to}. Consider current crowd levels and eco-friendly options. Keep it extremely concise and format it as a short HTML snippet with a <h4><i data-lucide="map"></i> AI Journey Plan</h4> and steps.`;
+  const response = await callStadiumAI(SYSTEM_PROMPTS['fan'], prompt);
+  resultEl.innerHTML = `<div class="ai-tip animate__animated animate__fadeIn">${response}</div>`;
+  setTimeout(() => lucide.createIcons(), 50);
 }
 
 /**
@@ -1025,7 +1028,7 @@ function renderParkingLots(containerId) {
     card.setAttribute('role', 'listitem');
     card.innerHTML = `
       <div class="parking-header">
-        <strong>🅿️ Lot ${lot.id}</strong>
+        <strong><i data-lucide="square-parking"></i> Lot ${lot.id}</strong>
         <span class="badge ${lot.available === 0 ? 'badge-danger' : lot.available < 100 ? 'badge-warning' : 'badge-success'}">
           ${lot.available === 0 ? 'FULL' : `${lot.available} spots`}
         </span>
@@ -1044,7 +1047,7 @@ function renderParkingLots(containerId) {
 
   const recEl = document.getElementById('parking-recommendation');
   if (recEl) {
-    recEl.innerHTML = `<div class="ai-tip">🤖 <strong>AI Recommendation:</strong> Park at Lot ${bestLot.id} — ${bestLot.available} spots available, ${bestLot.distance} from stadium, $${bestLot.price}/hr. ${bestLot.evSpots} EV charging spots.</div>`;
+    recEl.innerHTML = `<div class="ai-tip"><i data-lucide="bot"></i> <strong>AI Recommendation:</strong> Park at Lot ${bestLot.id} — ${bestLot.available} spots available, ${bestLot.distance} from stadium, $${bestLot.price}/hr. ${bestLot.evSpots} EV charging spots.</div>`;
   }
 }
 
@@ -1080,7 +1083,7 @@ function calculateImpact() {
         </div>
         <div class="carbon-stat highlight">
           <span class="carbon-stat-value">${result.saved} kg</span>
-          <span class="carbon-stat-label">CO₂ Saved! 🌱</span>
+          <span class="carbon-stat-label">CO₂ Saved! <i data-lucide="leaf"></i></span>
         </div>
         <div class="carbon-stat">
           <span class="carbon-stat-value">🌳 ${result.trees}</span>
@@ -1154,10 +1157,12 @@ function resolveIncident(incidentId) {
  * @description Gets AI analysis for a specific incident.
  * @param {string} incidentId - The incident ID.
  */
-function getAIIncidentResponse(incidentId) {
+async function getAIIncidentResponse(incidentId) {
   const incident = state.incidents.find(i => i.id === incidentId);
   if (!incident) return;
-  sendChatMessage('command', `Provide a detailed response plan for incident ${incident.id}: ${incident.type} incident in ${incident.zone} zone, severity ${incident.severity}. Current action: ${incident.aiAction}. What additional steps should we take?`);
+  const prompt = `Provide a detailed response plan for incident ${incident.id}: ${incident.type} incident in ${incident.zone} zone, severity ${incident.severity}. Current action: ${incident.aiAction}. What additional steps should we take?`;
+  const response = await callStadiumAI(SYSTEM_PROMPTS['command'], prompt);
+  showToast(response, 'info', 10000); // Display result in a toast for now
   showTab('command-center');
 }
 
@@ -1201,24 +1206,22 @@ function renderVolunteerStations(containerId) {
  * @function optimizeDeployment
  * @description Triggers AI-optimized volunteer redeployment.
  */
-function optimizeDeployment() {
+async function optimizeDeployment() {
   const resultEl = document.getElementById('deployment-result');
   if (resultEl) resultEl.innerHTML = '<div class="loading-spinner"></div>';
 
-  sendChatMessage('command', `Optimize volunteer deployment. Current staffing: ${state.volunteerStations.map(s => `${s.name}: ${s.staffCount}/${s.required}`).join(', ')}. Identify understaffed areas and suggest redeployment from overstaffed stations.`);
-
-  setTimeout(() => {
-    state.volunteerStations.forEach(station => {
-      if (station.staffCount < station.required) {
-        station.staffCount = station.required;
-      }
-    });
-    renderVolunteerStations('volunteer-stations');
-    if (resultEl) {
-      resultEl.innerHTML = '<div class="ai-tip animate__animated animate__fadeIn">🤖 <strong>AI:</strong> Deployment optimized. Redistributed 8 volunteers from overstaffed stations to Gate C, Transport Hub, and Fan Zone West.</div>';
+  const prompt = `Optimize volunteer deployment. Current staffing: ${state.volunteerStations.map(s => `${s.name}: ${s.staffCount}/${s.required}`).join(', ')}. Identify understaffed areas and suggest redeployment from overstaffed stations. Keep it concise.`;
+  const response = await callStadiumAI(SYSTEM_PROMPTS['command'], prompt);
+  state.volunteerStations.forEach(station => {
+    if (station.staffCount < station.required) {
+      station.staffCount = station.required;
     }
-    showToast('✅ Volunteer deployment optimized', 'success');
-  }, 1200);
+  });
+  renderVolunteerStations('volunteer-stations');
+  if (resultEl) {
+    resultEl.innerHTML = `<div class="ai-tip animate__animated animate__fadeIn"><strong>AI:</strong> ${response}</div>`;
+  }
+  showToast('✅ Volunteer deployment optimized', 'success');
 }
 
 // ─────────────────────────────────
@@ -1229,7 +1232,7 @@ function optimizeDeployment() {
  * @function generateBriefing
  * @description Generates an AI operational briefing based on current state.
  */
-function generateBriefing() {
+async function generateBriefing() {
   const container = document.getElementById('briefing-container');
   if (!container) return;
   container.innerHTML = '<div class="loading-spinner"></div>';
@@ -1246,16 +1249,16 @@ function generateBriefing() {
     container.innerHTML = `
       <div class="briefing-card animate__animated animate__fadeIn">
         <div class="briefing-header">
-          <span class="briefing-timestamp">📋 Generated at ${time}</span>
+          <span class="briefing-timestamp"><i data-lucide="clipboard-list"></i> Generated at ${time}</span>
         </div>
         <div class="briefing-section">
-          <h4>📊 Summary</h4>
+          <h4><i data-lucide="bar-chart-2"></i> Summary</h4>
           <p>Stadium at ${Math.round((attendance / CONSTANTS.STADIUM_CAPACITY) * 100)}% capacity. ${activeIncidents} active incidents being managed. ${state.matchData.homeTeam} vs ${state.matchData.awayTeam} — ${state.matchData.status}.</p>
         </div>
         <div class="briefing-section">
-          <h4>🚨 Key Alerts</h4>
+          <h4><i data-lucide="siren"></i> Key Alerts</h4>
           <p>${highZones.length > 0 ? `High density in: ${highZones.join(', ')}. Flow management protocols active.` : 'All zones at comfortable levels.'}</p>
-          <p>${activeIncidents > 2 ? '⚠️ Above-average incident rate. Consider increasing patrols.' : 'Incident rate within normal parameters.'}</p>
+          <p>${activeIncidents > 2 ? '<i data-lucide="alert-triangle"></i> Above-average incident rate. Consider increasing patrols.' : 'Incident rate within normal parameters.'}</p>
         </div>
         <div class="briefing-section">
           <h4>💡 Recommendations</h4>
@@ -1304,7 +1307,7 @@ function renderSustainabilityTracker(containerId) {
         <div class="density-bar"><div class="density-fill" style="width:80%;background:linear-gradient(90deg,#A78BFA,#7C3AED)"></div></div>
       </div>
     </div>
-    <div class="ai-tip" style="margin-top:16px">🤖 <strong>AI Sustainability Tip:</strong> Today's renewable energy usage is ${m.renewable}% — ${m.renewable >= 80 ? 'excellent! We\'re exceeding our 80% target.' : 'let\'s work toward our 80% target.'}</div>`;
+    <div class="ai-tip" style="margin-top:16px"><i data-lucide="bot"></i> <strong>AI Sustainability Tip:</strong> Today's renewable energy usage is ${m.renewable}% — ${m.renewable >= 80 ? 'excellent! We\'re exceeding our 80% target.' : 'let\'s work toward our 80% target.'}</div>`;
 }
 
 /**
@@ -1318,15 +1321,15 @@ function renderSustainabilityStats(containerId) {
 
   container.innerHTML = `
     <div class="stats-cards">
-      <div class="stat-card"><div class="stat-icon">🚇</div><div class="stat-value">5,234</div><div class="stat-label">Fans chose public transport</div></div>
+      <div class="stat-card"><div class="stat-icon"><i data-lucide="train"></i></div><div class="stat-value">5,234</div><div class="stat-label">Fans chose public transport</div></div>
       <div class="stat-card"><div class="stat-icon">🚴</div><div class="stat-value">892</div><div class="stat-label">Bikes rented today</div></div>
-      <div class="stat-card"><div class="stat-icon">🌱</div><div class="stat-value">12.4 tons</div><div class="stat-label">CO₂ saved vs driving</div></div>
+      <div class="stat-card"><div class="stat-icon"><i data-lucide="leaf"></i></div><div class="stat-value">12.4 tons</div><div class="stat-label">CO₂ saved vs driving</div></div>
       <div class="stat-card"><div class="stat-icon">♻️</div><div class="stat-value">68%</div><div class="stat-label">Waste recycled</div></div>
     </div>`;
 
   const tipEl = document.getElementById('sustainability-ai-tip');
   if (tipEl) {
-    tipEl.innerHTML = '<div class="ai-tip">🤖 <strong>AI Tip:</strong> Taking Metro saves 2.4 kg CO₂ compared to a solo car trip. Every green choice counts! 🌍</div>';
+    tipEl.innerHTML = '<div class="ai-tip"><i data-lucide="bot"></i> <strong>AI Tip:</strong> Taking Metro saves 2.4 kg CO₂ compared to a solo car trip. Every green choice counts! 🌍</div>';
   }
 }
 
@@ -1340,7 +1343,7 @@ function renderEcoChallenges(containerId) {
   if (!container) return;
 
   const challenges = [
-    { id: 1, icon: '🌱', name: 'Take Metro to stadium', points: 50 },
+    { id: 1, icon: '<i data-lucide="leaf"></i>', name: 'Take Metro to stadium', points: 50 },
     { id: 2, icon: '🚴', name: 'Use bike share', points: 100 },
     { id: 3, icon: '♻️', name: 'Use recycling bins', points: 30 },
     { id: 4, icon: '💧', name: 'Refill water bottle', points: 20 }
@@ -1451,7 +1454,7 @@ function renderMatchInfo(containerId) {
     <div class="match-meta">
       <span class="pulse-dot"></span>
       <span>${m.time} • ${m.status}</span>
-      <span>📍 ${m.venue}</span>
+      <span><i data-lucide="map-pin"></i> ${m.venue}</span>
     </div>`;
 }
 
@@ -1472,7 +1475,7 @@ function updateMatchData() {
   // Occasional goal simulation
   if (Math.random() < 0.03 && m.status !== 'Full Time') {
     if (Math.random() > 0.5) { m.homeScore++; } else { m.awayScore++; }
-    showToast(`⚽ GOAL! ${m.homeTeam} ${m.homeScore} - ${m.awayScore} ${m.awayTeam}`, 'success', 5000);
+    showToast(`<i data-lucide="goal"></i> GOAL! ${m.homeTeam} ${m.homeScore} - ${m.awayScore} ${m.awayTeam}`, 'success', 5000);
   }
 
   requestAnimationFrame(() => renderMatchInfo('match-info'));
@@ -1494,9 +1497,9 @@ function renderServicesGrid(containerId) {
   const services = [
     { icon: '🍔', name: 'Food Courts', detail: '8 locations', query: 'Where are the food courts?' },
     { icon: '🚻', name: 'Restrooms', detail: 'Every 50m', query: 'Where is the nearest restroom?' },
-    { icon: '🏥', name: 'First Aid', detail: '4 stations', query: 'Where is the nearest first aid station?' },
+    { icon: '<i data-lucide="hospital"></i>', name: 'First Aid', detail: '4 stations', query: 'Where is the nearest first aid station?' },
     { icon: '🙏', name: 'Prayer Rooms', detail: '3 locations', query: 'Where are the prayer rooms?' },
-    { icon: '♿', name: 'Accessibility', detail: '6 points', query: 'Where are the accessibility service points?' },
+    { icon: '<i data-lucide="accessibility"></i>', name: 'Accessibility', detail: '6 points', query: 'Where are the accessibility service points?' },
     { icon: '👶', name: 'Family Areas', detail: '2 zones', query: 'Where are the family-friendly areas?' },
     { icon: '📱', name: 'Charging', detail: '12 stations', query: 'Where can I charge my phone?' },
     { icon: '🛒', name: 'Merchandise', detail: '5 stores', query: 'Where are the merchandise stores?' }
@@ -1536,14 +1539,14 @@ function renderAccessibilityServices(containerId) {
   if (!container) return;
 
   const services = [
-    { icon: '♿', name: 'Wheelchair Zones', detail: 'Sections 101-105' },
+    { icon: '<i data-lucide="accessibility"></i>', name: 'Wheelchair Zones', detail: 'Sections 101-105' },
     { icon: '👁️', name: 'Audio Description', detail: 'Headsets at Gate A desk' },
     { icon: '👂', name: 'Hearing Loop', detail: 'All main seating areas' },
-    { icon: '🤝', name: 'Personal Assistants', detail: 'Request at Gate B' },
-    { icon: '🛗', name: 'Elevators', detail: '6 locations, real-time status' },
-    { icon: '🅿️', name: 'Accessible Parking', detail: 'Lots P1, P2, P3' },
-    { icon: '🚌', name: 'Accessible Shuttle', detail: 'Every 15 min from all lots' },
-    { icon: '🏥', name: 'Medical Support', detail: '24/7 at Gate C' }
+    { icon: '<i data-lucide="handshake"></i>', name: 'Personal Assistants', detail: 'Request at Gate B' },
+    { icon: '<i data-lucide="arrow-up-down"></i>', name: 'Elevators', detail: '6 locations, real-time status' },
+    { icon: '<i data-lucide="square-parking"></i>', name: 'Accessible Parking', detail: 'Lots P1, P2, P3' },
+    { icon: '<i data-lucide="bus"></i>', name: 'Accessible Shuttle', detail: 'Every 15 min from all lots' },
+    { icon: '<i data-lucide="hospital"></i>', name: 'Medical Support', detail: '24/7 at Gate C' }
   ];
 
   const frag = document.createDocumentFragment();
@@ -1582,11 +1585,11 @@ function renderElevatorStatus(containerId) {
     card.setAttribute('role', 'listitem');
     card.innerHTML = `
       <div class="elevator-header">
-        <span class="elevator-id">🛗 ${el.id}</span>
+        <span class="elevator-id"><i data-lucide="arrow-up-down"></i> ${el.id}</span>
         <span class="elevator-status-dot" style="background:${statusColors[el.status] || '#4ADE80'}"></span>
       </div>
       <div class="elevator-info">
-        <span>📍 ${el.floor}</span>
+        <span><i data-lucide="map-pin"></i> ${el.floor}</span>
         <span>⏱️ ${el.status === 'Maintenance' ? 'N/A' : el.waitTime + ' min wait'}</span>
         <span class="badge ${el.status === 'Operational' ? 'badge-success' : el.status === 'Maintenance' ? 'badge-danger' : 'badge-warning'}">${el.status}</span>
       </div>`;
@@ -1620,7 +1623,7 @@ function updateElevatorStatus() {
  * @function planAccessibleRoute
  * @description Plans an accessible route based on form inputs.
  */
-function planAccessibleRoute() {
+async function planAccessibleRoute() {
   const fromEl = document.getElementById('acc-from');
   const toEl = document.getElementById('acc-to');
   const resultEl = document.getElementById('acc-route-result');
@@ -1637,22 +1640,9 @@ function planAccessibleRoute() {
   resultEl.innerHTML = '<div class="loading-spinner"></div>';
 
   const filterText = filters.length > 0 ? ` Needs: ${filters.join(', ')}.` : '';
-  sendChatMessage('accessibility', `Plan an accessible route from ${from} to ${to}.${filterText} Include elevators, ramps, and rest points.`);
-
-  setTimeout(() => {
-    resultEl.innerHTML = `
-      <div class="ai-tip animate__animated animate__fadeIn">
-        <h4>♿ Accessible Route</h4>
-        <p><strong>${from}</strong> → <strong>${to}</strong></p>
-        ${filters.length > 0 ? `<p>🔧 Filters: ${filters.join(', ')}</p>` : ''}
-        <div class="journey-steps">
-          <p>1️⃣ Enter via Gate A (ramped entrance, auto-doors)</p>
-          <p>2️⃣ Take Elevator E1 to Level 1 (Ground floor, 2 min wait)</p>
-          <p>3️⃣ Follow tactile path to ${to} (rest point at halfway mark)</p>
-        </div>
-        <p>📏 Distance: ~200m | 🛗 1 elevator | ♿ Fully step-free | 🪑 1 rest point</p>
-      </div>`;
-  }, 800);
+  const prompt = `Plan an accessible route from ${from} to ${to}.${filterText} Include elevators, ramps, and rest points. Format as a short HTML snippet.`;
+  const response = await callStadiumAI(SYSTEM_PROMPTS['accessibility'], prompt);
+  resultEl.innerHTML = `<div class="ai-tip animate__animated animate__fadeIn">${response}</div>`;
 }
 
 /**
@@ -1753,7 +1743,7 @@ function initializeApp() {
   // Show initial tab
   showTab('fan-portal');
 
-  console.log('%c[StadiumNexus] ⚽ Platform initialized successfully', 'color:#C9A84C;font-weight:bold;font-size:14px');
+  console.log('%c[StadiumNexus] <i data-lucide="goal"></i> Platform initialized successfully', 'color:#C9A84C;font-weight:bold;font-size:14px');
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -8,7 +8,7 @@
   <meta name="keywords" content="FIFA World Cup 2026, Stadium Operations, AI, Smart Stadium, StadiumNexus">
   <meta name="author" content="Poovarasu S">
   <meta name="theme-color" content="#1A1A2E">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net https://api.anthropic.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net https://integrate.api.nvidia.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; connect-src 'self' https://integrate.api.nvidia.com;">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 
@@ -27,6 +27,7 @@
 
   <!-- DOMPurify -->
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.3/dist/purify.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
   <!-- Skip Navigation -->
@@ -45,7 +46,7 @@
     <div class="header-content">
       <div class="header-brand">
         <div class="logo" aria-label="StadiumNexus Logo">
-          <span class="logo-icon">⚽</span>
+          <span class="logo-icon"><i data-lucide="goal"></i></span>
           <div class="logo-text">
             <h1 class="logo-title">StadiumNexus</h1>
             <p class="logo-tagline">One Platform. Every Experience.</p>
@@ -59,19 +60,19 @@
 
       <nav class="tab-nav" role="navigation" aria-label="Main navigation">
         <button class="tab-btn active" data-tab="fan-portal" onclick="showTab('fan-portal')" aria-label="Fan Portal tab" aria-selected="true" role="tab">
-          <span class="tab-icon">🏟️</span>
+          <span class="tab-icon"><i data-lucide="building"></i></span>
           <span class="tab-label">Fan Portal</span>
         </button>
         <button class="tab-btn" data-tab="command-center" onclick="showTab('command-center')" aria-label="Command Center tab" aria-selected="false" role="tab">
-          <span class="tab-icon">🎯</span>
+          <span class="tab-icon"><i data-lucide="crosshair"></i></span>
           <span class="tab-label">Command Center</span>
         </button>
         <button class="tab-btn" data-tab="accessibility-hub" onclick="showTab('accessibility-hub')" aria-label="Accessibility Hub tab" aria-selected="false" role="tab">
-          <span class="tab-icon">♿</span>
+          <span class="tab-icon"><i data-lucide="accessibility"></i></span>
           <span class="tab-label">Accessibility</span>
         </button>
         <button class="tab-btn" data-tab="transport-hub" onclick="showTab('transport-hub')" aria-label="Transport & Sustainability tab" aria-selected="false" role="tab">
-          <span class="tab-icon">🚌</span>
+          <span class="tab-icon"><i data-lucide="bus"></i></span>
           <span class="tab-label">Transport</span>
         </button>
       </nav>
@@ -96,7 +97,7 @@
         <!-- AI Multilingual Assistant -->
         <div class="card card-wide animate__animated animate__fadeInUp">
           <div class="card-header">
-            <h3 class="card-title">🤖 AI Stadium Assistant</h3>
+            <h3 class="card-title"><i data-lucide="bot"></i> AI Stadium Assistant</h3>
             <div class="language-selector">
               <label for="fan-language" class="sr-only">Select Language</label>
               <select id="fan-language" class="form-select" aria-label="Select language for AI assistant" onchange="updateLanguage(this.value)">
@@ -125,7 +126,7 @@
         <!-- Smart Navigation Panel -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.1s">
           <div class="card-header">
-            <h3 class="card-title">🗺️ Smart Navigation</h3>
+            <h3 class="card-title"><i data-lucide="map"></i> Smart Navigation</h3>
           </div>
           <div class="card-body">
             <div id="gate-map" class="stadium-map" role="img" aria-label="Stadium gate map showing entry points"></div>
@@ -149,7 +150,7 @@
         <!-- Real-Time Crowd Density -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
           <div class="card-header">
-            <h3 class="card-title">📊 Real-Time Crowd Density</h3>
+            <h3 class="card-title"><i data-lucide="bar-chart-2"></i> Real-Time Crowd Density</h3>
             <span class="pulse-dot" aria-hidden="true"></span>
           </div>
           <div class="card-body">
@@ -161,7 +162,7 @@
         <!-- Transport Planner -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.3s">
           <div class="card-header">
-            <h3 class="card-title">🚇 Transport Planner</h3>
+            <h3 class="card-title"><i data-lucide="train"></i> Transport Planner</h3>
           </div>
           <div class="card-body">
             <div id="transport-options" class="transport-options" role="list" aria-label="Available transport options"></div>
@@ -171,7 +172,7 @@
         <!-- Match Info Widget -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.4s">
           <div class="card-header">
-            <h3 class="card-title">⚽ Today's Match</h3>
+            <h3 class="card-title"><i data-lucide="goal"></i> Today's Match</h3>
             <span class="live-badge">🔴 LIVE</span>
           </div>
           <div class="card-body">
@@ -182,7 +183,7 @@
         <!-- Services Locator -->
         <div class="card card-wide animate__animated animate__fadeInUp" style="animation-delay: 0.5s">
           <div class="card-header">
-            <h3 class="card-title">📍 Stadium Services</h3>
+            <h3 class="card-title"><i data-lucide="map-pin"></i> Stadium Services</h3>
           </div>
           <div class="card-body">
             <div id="services-grid" class="services-grid" role="list" aria-label="Stadium services directory"></div>
@@ -203,7 +204,7 @@
       <!-- Live Metrics Row -->
       <div class="metrics-row" role="region" aria-label="Key operational metrics">
         <div class="metric-card animate__animated animate__fadeInUp">
-          <div class="metric-icon">👥</div>
+          <div class="metric-icon"><i data-lucide="users"></i></div>
           <div class="metric-info">
             <span id="metric-attendance" class="metric-value">68,000</span>
             <span class="metric-label">Total Attendance</span>
@@ -211,7 +212,7 @@
           </div>
         </div>
         <div class="metric-card animate__animated animate__fadeInUp" style="animation-delay: 0.1s">
-          <div class="metric-icon">⚠️</div>
+          <div class="metric-icon"><i data-lucide="alert-triangle"></i></div>
           <div class="metric-info">
             <span id="metric-incidents" class="metric-value metric-warning">3</span>
             <span class="metric-label">Active Incidents</span>
@@ -219,7 +220,7 @@
           </div>
         </div>
         <div class="metric-card animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
-          <div class="metric-icon">👮</div>
+          <div class="metric-icon"><i data-lucide="shield"></i></div>
           <div class="metric-info">
             <span id="metric-staff" class="metric-value">2,847</span>
             <span class="metric-label">Staff On Duty</span>
@@ -227,7 +228,7 @@
           </div>
         </div>
         <div class="metric-card animate__animated animate__fadeInUp" style="animation-delay: 0.3s">
-          <div class="metric-icon">🌤️</div>
+          <div class="metric-icon"><i data-lucide="cloud-sun"></i></div>
           <div class="metric-info">
             <span class="metric-value">72°F</span>
             <span class="metric-label">Partly Cloudy</span>
@@ -240,7 +241,7 @@
         <!-- Crowd Heatmap -->
         <div class="card animate__animated animate__fadeInUp">
           <div class="card-header">
-            <h3 class="card-title">🔥 Crowd Heatmap</h3>
+            <h3 class="card-title"><i data-lucide="flame"></i> Crowd Heatmap</h3>
             <span class="pulse-dot" aria-hidden="true"></span>
           </div>
           <div class="card-body">
@@ -257,7 +258,7 @@
         <!-- AI Incident Manager -->
         <div class="card card-wide animate__animated animate__fadeInUp" style="animation-delay: 0.1s">
           <div class="card-header">
-            <h3 class="card-title">🚨 AI Incident Manager</h3>
+            <h3 class="card-title"><i data-lucide="siren"></i> AI Incident Manager</h3>
             <span id="incident-count-badge" class="badge badge-warning">3 Active</span>
           </div>
           <div class="card-body">
@@ -268,7 +269,7 @@
         <!-- AI Chat for Command Center -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.15s">
           <div class="card-header">
-            <h3 class="card-title">🤖 Operations AI</h3>
+            <h3 class="card-title"><i data-lucide="bot"></i> Operations AI</h3>
           </div>
           <div class="card-body">
             <div id="command-chat-chips" class="chat-chips" role="group" aria-label="Suggested operations queries"></div>
@@ -287,7 +288,7 @@
         <!-- Volunteer Deployment -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
           <div class="card-header">
-            <h3 class="card-title">🙋 Volunteer Deployment</h3>
+            <h3 class="card-title"><i data-lucide="hand"></i> Volunteer Deployment</h3>
           </div>
           <div class="card-body">
             <div id="volunteer-stations" class="volunteer-stations" role="list" aria-label="Volunteer deployment stations"></div>
@@ -301,7 +302,7 @@
         <!-- AI Operational Briefing -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.25s">
           <div class="card-header">
-            <h3 class="card-title">📋 AI Operational Briefing</h3>
+            <h3 class="card-title"><i data-lucide="clipboard-list"></i> AI Operational Briefing</h3>
           </div>
           <div class="card-body">
             <div id="briefing-container" class="briefing-container" role="region" aria-label="AI-generated operational briefing"></div>
@@ -314,7 +315,7 @@
         <!-- Sustainability Tracker -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.3s">
           <div class="card-header">
-            <h3 class="card-title">🌱 Sustainability Tracker</h3>
+            <h3 class="card-title"><i data-lucide="leaf"></i> Sustainability Tracker</h3>
           </div>
           <div class="card-body">
             <div id="sustainability-tracker" class="sustainability-tracker" role="region" aria-label="Stadium sustainability metrics"></div>
@@ -336,7 +337,7 @@
         <!-- Accessibility AI Assistant -->
         <div class="card card-wide animate__animated animate__fadeInUp">
           <div class="card-header">
-            <h3 class="card-title">♿ Accessibility AI Assistant</h3>
+            <h3 class="card-title"><i data-lucide="accessibility"></i> Accessibility AI Assistant</h3>
           </div>
           <div class="card-body">
             <div id="accessibility-chat-chips" class="chat-chips" role="group" aria-label="Suggested accessibility questions"></div>
@@ -355,7 +356,7 @@
         <!-- Accessible Route Planner -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.1s">
           <div class="card-header">
-            <h3 class="card-title">🛤️ Accessible Route Planner</h3>
+            <h3 class="card-title"><i data-lucide="route"></i> Accessible Route Planner</h3>
           </div>
           <div class="card-body">
             <div class="form-group">
@@ -369,15 +370,15 @@
             <fieldset class="filter-group">
               <legend class="form-label">Accessibility Needs</legend>
               <div class="filter-chips">
-                <label class="filter-chip"><input type="checkbox" value="wheelchair" aria-label="Wheelchair accessible route"> ♿ Wheelchair</label>
+                <label class="filter-chip"><input type="checkbox" value="wheelchair" aria-label="Wheelchair accessible route"> <i data-lucide="accessibility"></i> Wheelchair</label>
                 <label class="filter-chip"><input type="checkbox" value="visual" aria-label="Visual impairment assistance"> 👁️ Visual</label>
                 <label class="filter-chip"><input type="checkbox" value="hearing" aria-label="Hearing impairment support"> 👂 Hearing</label>
                 <label class="filter-chip"><input type="checkbox" value="mobility" aria-label="Mobility aid support"> 🦯 Mobility Aid</label>
-                <label class="filter-chip"><input type="checkbox" value="companion" aria-label="Need a companion"> 🤝 Companion</label>
+                <label class="filter-chip"><input type="checkbox" value="companion" aria-label="Need a companion"> <i data-lucide="handshake"></i> Companion</label>
               </div>
             </fieldset>
             <button class="btn btn-primary btn-full" onclick="planAccessibleRoute()" aria-label="Find accessible route with AI" style="margin-top:12px">
-              🗺️ Find Accessible Route
+              <i data-lucide="map"></i> Find Accessible Route
             </button>
             <div id="acc-route-result" class="nav-result" role="status" aria-live="polite"></div>
           </div>
@@ -386,7 +387,7 @@
         <!-- Accessibility Services Grid -->
         <div class="card card-wide animate__animated animate__fadeInUp" style="animation-delay: 0.15s">
           <div class="card-header">
-            <h3 class="card-title">🏥 Accessibility Services</h3>
+            <h3 class="card-title"><i data-lucide="hospital"></i> Accessibility Services</h3>
           </div>
           <div class="card-body">
             <div id="accessibility-services" class="services-grid" role="list" aria-label="Available accessibility services"></div>
@@ -396,7 +397,7 @@
         <!-- Real-Time Elevator Status -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
           <div class="card-header">
-            <h3 class="card-title">🛗 Real-Time Elevator Status</h3>
+            <h3 class="card-title"><i data-lucide="arrow-up-down"></i> Real-Time Elevator Status</h3>
             <span class="pulse-dot" aria-hidden="true"></span>
           </div>
           <div class="card-body">
@@ -407,7 +408,7 @@
         <!-- Companion Request System -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.25s">
           <div class="card-header">
-            <h3 class="card-title">🤝 Request a Companion</h3>
+            <h3 class="card-title"><i data-lucide="handshake"></i> Request a Companion</h3>
           </div>
           <div class="card-body">
             <form id="companion-form" class="companion-form" onsubmit="submitCompanionRequest(event)" aria-label="Companion request form">
@@ -457,7 +458,7 @@
         <!-- Live Transport Board -->
         <div class="card card-wide animate__animated animate__fadeInUp">
           <div class="card-header">
-            <h3 class="card-title">🚇 Live Transport Board</h3>
+            <h3 class="card-title"><i data-lucide="train"></i> Live Transport Board</h3>
             <span class="pulse-dot" aria-hidden="true"></span>
           </div>
           <div class="card-body">
@@ -468,7 +469,7 @@
         <!-- Journey Planner -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.1s">
           <div class="card-header">
-            <h3 class="card-title">🗺️ AI Journey Planner</h3>
+            <h3 class="card-title"><i data-lucide="map"></i> AI Journey Planner</h3>
           </div>
           <div class="card-body">
             <div class="form-group">
@@ -493,7 +494,7 @@
         <!-- Parking Intelligence -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.15s">
           <div class="card-header">
-            <h3 class="card-title">🅿️ Parking Intelligence</h3>
+            <h3 class="card-title"><i data-lucide="square-parking"></i> Parking Intelligence</h3>
           </div>
           <div class="card-body">
             <div id="parking-lots" class="parking-grid" role="list" aria-label="Parking lot availability"></div>
@@ -504,14 +505,14 @@
         <!-- Sustainability Impact Calculator -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
           <div class="card-header">
-            <h3 class="card-title">🌱 Carbon Impact Calculator</h3>
+            <h3 class="card-title"><i data-lucide="leaf"></i> Carbon Impact Calculator</h3>
           </div>
           <div class="card-body">
             <div class="form-group">
               <label for="carbon-mode" class="form-label">How did you travel today?</label>
               <select id="carbon-mode" class="form-select" aria-label="Select your travel mode" aria-required="true">
-                <option value="metro">🚇 Metro</option>
-                <option value="bus">🚌 Bus</option>
+                <option value="metro"><i data-lucide="train"></i> Metro</option>
+                <option value="bus"><i data-lucide="bus"></i> Bus</option>
                 <option value="bike">🚴 Bike</option>
                 <option value="walk">🚶 Walk</option>
                 <option value="car">🚗 Car (Solo)</option>
@@ -523,7 +524,7 @@
               <input type="range" id="carbon-distance" class="form-range" min="1" max="100" value="10" aria-label="Travel distance in kilometers" oninput="document.getElementById('distance-display').textContent=this.value">
             </div>
             <button class="btn btn-primary btn-full" onclick="calculateImpact()" aria-label="Calculate carbon footprint impact">
-              🧮 Calculate My Impact
+              <i data-lucide="calculator"></i> Calculate My Impact
             </button>
             <div id="carbon-result" class="carbon-result" role="status" aria-live="polite"></div>
           </div>
@@ -532,9 +533,9 @@
         <!-- Eco Challenges -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.25s">
           <div class="card-header">
-            <h3 class="card-title">🏆 Eco Challenges</h3>
+            <h3 class="card-title"><i data-lucide="trophy"></i> Eco Challenges</h3>
             <div class="green-points-display">
-              <span class="green-points-icon">🌿</span>
+              <span class="green-points-icon"><i data-lucide="leafy-green"></i></span>
               <span id="green-points-total" class="green-points-value">0</span>
               <span class="green-points-label">pts</span>
             </div>
@@ -542,7 +543,7 @@
           <div class="card-body">
             <div id="eco-challenges" class="eco-challenges" role="list" aria-label="Daily eco-friendly challenges"></div>
             <div class="leaderboard-section">
-              <h4 class="leaderboard-title">🏅 Top Green Fans</h4>
+              <h4 class="leaderboard-title"><i data-lucide="medal"></i> Top Green Fans</h4>
               <div id="leaderboard" class="leaderboard" role="list" aria-label="Eco-challenge leaderboard"></div>
             </div>
           </div>
@@ -551,7 +552,7 @@
         <!-- Sustainability Stats -->
         <div class="card animate__animated animate__fadeInUp" style="animation-delay: 0.3s">
           <div class="card-header">
-            <h3 class="card-title">📊 Today's Sustainability Stats</h3>
+            <h3 class="card-title"><i data-lucide="bar-chart-2"></i> Today's Sustainability Stats</h3>
           </div>
           <div class="card-body">
             <div id="sustainability-stats" class="stats-grid" role="region" aria-label="Today's stadium sustainability statistics"></div>
@@ -569,13 +570,13 @@
   <footer class="footer" role="contentinfo">
     <div class="footer-inner">
       <div class="footer-brand">
-        <strong>⚽ StadiumNexus</strong>
+        <strong><i data-lucide="goal"></i> StadiumNexus</strong>
         <p>One Platform. Every Experience.</p>
         <p class="footer-credit">Built by Poovarasu S for PromptWars Virtual 2026</p>
       </div>
       <div class="footer-info">
-        <p>Powered by Claude AI • FIFA World Cup 2026</p>
-        <p>🧪 120+ Tests Passing • ♿ WCAG AA • 🔒 Secure</p>
+        <p>Powered by NVIDIA AI • FIFA World Cup 2026</p>
+        <p>🧪 120+ Tests Passing • <i data-lucide="accessibility"></i> WCAG AA • 🔒 Secure</p>
       </div>
     </div>
   </footer>
