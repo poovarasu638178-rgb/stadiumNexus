@@ -432,6 +432,13 @@ function trapFocus(element) {
 function showToast(message, type = 'info', duration = 5000) {
   const container = document.getElementById('toast-container');
   if (!container) return;
+  
+  // Deduplication check
+  const existingToasts = Array.from(container.querySelectorAll('.toast-text'));
+  if (existingToasts.some(el => el.textContent === message)) {
+    return; // Don't stack duplicate identical toasts
+  }
+
   const toast = document.createElement('div');
   toast.className = `toast toast-${type} animate__animated animate__fadeInRight`;
   const icons = { success: '✅', warning: '<i data-lucide="alert-triangle"></i>', error: '❌', info: 'ℹ️' };
@@ -443,17 +450,25 @@ function showToast(message, type = 'info', duration = 5000) {
   `;
   
   container.appendChild(toast);
-  lucide.createIcons({ root: toast });
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons({ root: toast });
+  }
 
   const dismiss = () => {
     if (toast.classList.contains('animate__fadeOutRight')) return;
     toast.classList.remove('animate__fadeInRight');
     toast.classList.add('animate__fadeOutRight');
-    setTimeout(() => toast.remove(), 400);
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 400);
   };
 
   toast.querySelector('.toast-close').addEventListener('click', dismiss);
-  if (duration > 0) setTimeout(dismiss, duration);
+  
+  const parsedDuration = parseInt(duration, 10);
+  if (parsedDuration > 0) {
+    setTimeout(dismiss, parsedDuration);
+  }
 }
 
 // ─────────────────────────────────
@@ -461,56 +476,110 @@ function showToast(message, type = 'info', duration = 5000) {
 // ─────────────────────────────────
 
 const SYSTEM_PROMPTS = {
-  fan: 'You are StadiumNexus AI, the official FIFA World Cup 2026 assistant. Help fans with navigation, transport, food, accessibility, match info, and stadium services. Be friendly, concise, and helpful. Respond in the user\'s selected language if they request it.',
-  command: 'You are StadiumNexus Operations AI for FIFA World Cup 2026. Help organizers with incident management, crowd control, volunteer deployment, and operational decisions. Be professional, data-driven, and action-oriented. Use current stadium data to inform responses.',
-  accessibility: 'You are the FIFA World Cup 2026 Accessibility Assistant. Help users with disabilities navigate the stadium, find accessible facilities, and enjoy the match. Be compassionate, detailed, and helpful. Always prioritize safety and comfort.'
+  fan: `You are StadiumNexus AI, the official FIFA World Cup 2026 stadium assistant. This is a demo app with simulated data — you do not have real restaurant names, addresses, or transit schedules. Keep every response under 3 sentences. Never invent specific restaurant names, street addresses, or bus/train numbers — instead give general, confident guidance using the app's own simulated features (e.g. 'Check the Stadium Services section for Food Court locations' or 'Use the Transport Planner tab for real-time options'). Be direct and helpful, never ask clarifying questions — just answer using what's simulated in this app.`,
+  command: `You are StadiumNexus Operations AI for FIFA World Cup 2026. This is a demo app with simulated data — do not invent real names, external contacts, or non-existent incidents. Keep every response under 3 sentences. Give general, confident guidance based on the app's simulated features (e.g. 'Check the Incident Management section to deploy volunteers' or 'View Crowd Density for gate status'). Be direct, data-driven, and action-oriented. Never ask clarifying questions — just answer using what's simulated in this app.`,
+  accessibility: `You are the FIFA World Cup 2026 Accessibility Assistant. This is a demo app with simulated data — do not invent real service locations, medical names, or external addresses. Keep every response under 3 sentences. Provide general, confident guidance using the app's features (e.g. 'Check the Stadium Services section for accessible seating' or 'Use the Transport Planner for accessible transit options'). Be direct and helpful, never ask clarifying questions — just answer using what's simulated in this app.`
 };
 
-const NVIDIA_API_KEY = "nvapi-YOUR_KEY_HERE"; // get free at build.nvidia.com
-const MODEL_PRIMARY = "nvidia/llama-3.3-nemotron-super-49b-v1.5";
+let API_KEY = localStorage.getItem('stadiumnexus_nvidia_key') || 'API_KEY_HIDDEN';
+let API_KEY_FALLBACK = 'API_KEY_HIDDEN';
+const MODEL_PRIMARY = "nvidia/llama-3.3-nemotron-super-49b-v1";
 const MODEL_FALLBACK = "meta/llama-3.1-8b-instruct";
 
 /**
+ * @function openSettings
+ * @description Opens the API configuration modal.
+ */
+function openSettings() {
+  const modal = document.getElementById('settings-modal');
+  const input = document.getElementById('gemini-api-key');
+  if (modal && input) {
+    input.value = API_KEY;
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+}
+
+/**
+ * @function closeSettings
+ * @description Closes the API configuration modal.
+ */
+function closeSettings() {
+  const modal = document.getElementById('settings-modal');
+  if (modal) {
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+}
+
+/**
+ * @function saveSettings
+ * @description Saves the API configuration to localStorage.
+ */
+function saveSettings() {
+  const input = document.getElementById('gemini-api-key');
+  if (input) {
+    API_KEY = input.value.trim();
+    localStorage.setItem('stadiumnexus_nvidia_key', API_KEY);
+    showToast('Configuration saved successfully', 'success');
+    closeSettings();
+  }
+}
+
+/**
  * @function callStadiumAI
- * @description Shared AI call function for all StadiumNexus AI features.
- * Tries MODEL_PRIMARY first, retries once with MODEL_FALLBACK on failure,
- * then returns a graceful fallback string only if both fail.
+ * @description Shared AI call function using Google Gemini API.
  * @param {string} systemPrompt - role-specific system prompt
  * @param {string} userQuery - sanitized user input
  * @returns {Promise<string>} AI response text
  */
 async function callStadiumAI(systemPrompt, userQuery) {
-  const attempt = async (model) => {
-    const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+  if (!API_KEY) {
+    showToast('API Key missing. Please configure AI settings.', 'error');
+    openSettings();
+    return "I need an API key to function. Please configure the AI settings.";
+  }
+
+  const makeRequest = async (model, key) => {
+    const response = await fetch("/api/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${NVIDIA_API_KEY}`
+        "Authorization": `Bearer ${key}`
       },
       body: JSON.stringify({
-        model,
+        model: model,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userQuery }
         ],
-        max_tokens: 800,
-        temperature: 0.7
+        temperature: 0.6,
+        top_p: 0.95,
+        max_tokens: 1024,
+        stream: false
       })
     });
-    if (!response.ok) throw new Error(`API returned ${response.status}`);
+
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}`);
+    }
+
     const data = await response.json();
-    return data.choices[0].message.content;
+    if (data.choices && data.choices.length > 0 && data.choices[0].message) {
+      return data.choices[0].message.content;
+    }
+    throw new Error('Invalid response format');
   };
 
   try {
-    return await attempt(MODEL_PRIMARY);
+    return await makeRequest(MODEL_PRIMARY, API_KEY);
   } catch (err) {
-    console.warn(`Primary model failed (${MODEL_PRIMARY}), trying fallback:`, err);
+    console.warn("Primary AI model failed, attempting fallback...", err);
     try {
-      return await attempt(MODEL_FALLBACK);
-    } catch (err2) {
-      console.error("Both NVIDIA models failed:", err2);
-      return "I'm having trouble connecting right now — please try again in a moment.";
+      return await makeRequest(MODEL_FALLBACK, API_KEY_FALLBACK);
+    } catch (fallbackErr) {
+      console.error("Fallback AI model also failed:", fallbackErr);
+      return "I couldn't generate a proper response at this time.";
     }
   }
 }
@@ -589,6 +658,23 @@ async function sendChatMessage(tabKey, userMessage) {
 }
 
 /**
+ * @function parseMarkdown
+ * @description Lightweight markdown-to-HTML converter for bold, italics, and headers.
+ * @param {string} text - The markdown text
+ * @returns {string} HTML string
+ */
+function parseMarkdown(text) {
+  if (!text) return '';
+  return text
+    .replace(/^### (.*$)/gim, '<strong>$1</strong><br>')
+    .replace(/^## (.*$)/gim, '<strong>$1</strong><br>')
+    .replace(/^# (.*$)/gim, '<strong>$1</strong><br>')
+    .replace(/\*\*([^*]+)\*\*/gim, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/gim, '<em>$1</em>')
+    .replace(/\n/gim, '<br>');
+}
+
+/**
  * @function renderChatMessage
  * @description Renders a single chat message bubble in the container.
  * @param {HTMLElement} container - The chat messages container.
@@ -602,12 +688,14 @@ function renderChatMessage(container, message) {
 
   const avatar = document.createElement('div');
   avatar.className = 'chat-avatar';
-  avatar.textContent = message.role === 'user' ? '👤' : '<i data-lucide="bot"></i>';
+  avatar.innerHTML = message.role === 'user' ? '👤' : '<i data-lucide="bot"></i>';
   avatar.setAttribute('aria-hidden', 'true');
 
   const bubble = document.createElement('div');
   bubble.className = 'chat-bubble';
-  bubble.textContent = message.content;
+  
+  const htmlContent = parseMarkdown(message.content);
+  bubble.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(htmlContent) : htmlContent;
 
   wrapper.appendChild(avatar);
   wrapper.appendChild(bubble);
@@ -718,7 +806,7 @@ function updateCrowdDensity() {
 
   if (warningZone) {
     const optGate = getOptimalGate(state.crowdData);
-    showToast(`<i data-lucide="alert-triangle"></i> ${warningZone} at ${state.crowdData[warningZone]}% — use ${optGate} instead`, 'warning');
+    // Suppress toast spam, rely on the visual recommendation card instead.
   }
   performance.mark('crowd-update-end');
 }
@@ -837,7 +925,7 @@ function renderGateMap(containerId) {
   const gates = Object.entries(state.gateStatuses);
   const colors = { open: '#4ADE80', closed: '#FF5252', busy: '#FBBF24' };
 
-  let svg = `<svg viewBox="0 0 ${w} ${h}" class="gate-map-svg" role="img" aria-label="Stadium gate map">`;
+  let svg = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" class="gate-map-svg" role="img" aria-label="Stadium gate map">`;
   
   // Pitch
   svg += `<ellipse cx="${cx}" cy="${cy}" rx="70" ry="40" fill="rgba(26,26,46,0.6)" stroke="rgba(201,168,76,0.15)"/>`;
