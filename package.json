@@ -1,0 +1,28 @@
+{
+  "name": "stadiumnexus",
+  "version": "1.0.0",
+  "description": "> **One Platform. Every Experience.**",
+  "main": "upgrade.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/poovarasu638178-rgb/stadiumNexus.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/poovarasu638178-rgb/stadiumNexus/issues"
+  },
+  "homepage": "https://github.com/poovarasu638178-rgb/stadiumNexus#readme",
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1"
+  }
+}
