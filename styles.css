@@ -601,9 +601,12 @@ h6 { font-size: 1.125rem; }
   background: var(--color-accent);
   color: var(--color-primary);
   border: none;
-  width: 44px;
+  width: auto;
+  min-width: 100px;
   height: 44px;
-  border-radius: 50%;
+  padding: 0 var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1335,6 +1338,13 @@ h6 { font-size: 1.125rem; }
   font-weight: 600;
 }
 
+.match-score-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--spacing-md);
+}
+
 .match-vs {
   font-family: var(--font-heading);
   font-size: 1.5rem;
@@ -1346,10 +1356,6 @@ h6 { font-size: 1.125rem; }
   font-family: var(--font-heading);
   font-size: 3rem;
   font-weight: 700;
-  display: flex;
-  gap: var(--spacing-md);
-  justify-content: center;
-  margin-top: var(--spacing-md);
 }
 
 .match-time {
@@ -1878,4 +1884,40 @@ a, button, select, input[type="radio"], input[type="checkbox"], .card, .chat-chi
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+
+/* FAN PORTAL UPGRADES */
+#fan-portal {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+#fan-portal .card {
+  margin-bottom: 0;
+}
+
+.nav-path-anim {
+  animation: drawPath 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes drawPath {
+  0% { stroke-dashoffset: 1200; }
+  100% { stroke-dashoffset: 400; }
+}
+
+/* Hover States */
+.gate-dot, .chat-chip, .service-card, .transport-option {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chat-chip:hover, .service-card:hover, .transport-option:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 15px rgba(201, 168, 76, 0.3);
+  border-color: rgba(201, 168, 76, 0.5);
+}
+
+.gate-dot:hover {
+  filter: drop-shadow(0px 0px 8px rgba(201, 168, 76, 0.8));
+  r: 20;
 }

@@ -429,19 +429,31 @@ function trapFocus(element) {
  * @param {string} [type='info'] - Toast type: 'success', 'warning', 'error', 'info'.
  * @param {number} [duration=4000] - Duration before auto-dismiss in ms.
  */
-function showToast(message, type = 'info', duration = 4000) {
+function showToast(message, type = 'info', duration = 5000) {
   const container = document.getElementById('toast-container');
   if (!container) return;
   const toast = document.createElement('div');
   toast.className = `toast toast-${type} animate__animated animate__fadeInRight`;
   const icons = { success: '✅', warning: '<i data-lucide="alert-triangle"></i>', error: '❌', info: 'ℹ️' };
-  toast.innerHTML = `<span class="toast-icon">${icons[type] || 'ℹ️'}</span><span class="toast-text">${message}</span>`;
+  
+  toast.innerHTML = `
+    <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+    <span class="toast-text">${message}</span>
+    <button class="toast-close" aria-label="Close">✕</button>
+  `;
+  
   container.appendChild(toast);
-  setTimeout(() => {
+  lucide.createIcons({ root: toast });
+
+  const dismiss = () => {
+    if (toast.classList.contains('animate__fadeOutRight')) return;
     toast.classList.remove('animate__fadeInRight');
     toast.classList.add('animate__fadeOutRight');
     setTimeout(() => toast.remove(), 400);
-  }, duration);
+  };
+
+  toast.querySelector('.toast-close').addEventListener('click', dismiss);
+  if (duration > 0) setTimeout(dismiss, duration);
 }
 
 // ─────────────────────────────────
@@ -821,30 +833,38 @@ function renderGateMap(containerId) {
   if (!container) return;
 
   const w = 440, h = 300;
+  const cx = 220, cy = 150, rx = 180, ry = 110;
   const gates = Object.entries(state.gateStatuses);
   const colors = { open: '#4ADE80', closed: '#FF5252', busy: '#FBBF24' };
-  const positions = [
-    { x: 120, y: 15 }, { x: 220, y: 15 }, { x: 320, y: 15 }, { x: 395, y: 100 },
-    { x: 395, y: 200 }, { x: 300, y: 270 }, { x: 180, y: 270 }, { x: 30, y: 150 }
-  ];
 
   let svg = `<svg viewBox="0 0 ${w} ${h}" class="gate-map-svg" role="img" aria-label="Stadium gate map">`;
-  svg += `<rect x="60" y="40" width="320" height="220" rx="50" fill="none" stroke="rgba(201,168,76,0.25)" stroke-width="2"/>`;
-  svg += `<ellipse cx="220" cy="150" rx="70" ry="40" fill="rgba(26,26,46,0.6)" stroke="rgba(201,168,76,0.15)"/>`;
-  svg += `<text x="220" y="155" text-anchor="middle" fill="rgba(201,168,76,0.4)" font-size="11" font-family="Inter">PITCH</text>`;
+  
+  // Pitch
+  svg += `<ellipse cx="${cx}" cy="${cy}" rx="70" ry="40" fill="rgba(26,26,46,0.6)" stroke="rgba(201,168,76,0.15)"/>`;
+  svg += `<text x="${cx}" y="${cy+4}" text-anchor="middle" fill="rgba(201,168,76,0.4)" font-size="11" font-family="Inter">PITCH</text>`;
+  
+  // Stadium Bowl
+  svg += `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="rgba(201,168,76,0.25)" stroke-width="2"/>`;
 
+  // Animated Path
+  if (state.activeNavPath) {
+    svg += `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="var(--color-accent)" stroke-width="4" stroke-dasharray="1200" stroke-dashoffset="1200" class="nav-path-anim"/>`;
+  }
+
+  // Gates on Perimeter
   gates.forEach(([gate, status], i) => {
-    const p = positions[i];
+    // Math to position evenly around perimeter (start from left, go clockwise)
+    const angle = (i * Math.PI) / 4 + Math.PI;
+    const px = cx + rx * Math.cos(angle);
+    const py = cy + ry * Math.sin(angle);
     const color = colors[status];
-    svg += `<circle cx="${p.x}" cy="${p.y}" r="18" fill="${color}" opacity="0.85"
-      style="cursor:pointer" class="gate-dot"
+    svg += `<circle cx="${px}" cy="${py}" r="18" fill="${color}" opacity="0.9"
+      style="cursor:pointer; transition: all 0.2s ease;" class="gate-dot"
       onclick="showToast('Gate ${gate}: ${status.toUpperCase()} — AI suggests ${status === 'open' ? 'use this gate' : status === 'busy' ? 'expect 5 min wait' : 'use alternate gate'}', '${status === 'open' ? 'success' : status === 'busy' ? 'warning' : 'error'}')"/>`;
-    svg += `<text x="${p.x}" y="${p.y + 5}" text-anchor="middle" fill="#1A1A2E"
-      font-size="14" font-weight="700" font-family="Space Grotesk">${gate}</text>`;
+    svg += `<text x="${px}" y="${py + 5}" text-anchor="middle" fill="#1A1A2E"
+      font-size="14" font-weight="700" font-family="Space Grotesk" style="pointer-events: none;">${gate}</text>`;
   });
 
-  // Legend
-  svg += `<text x="60" y="298" fill="#E8EAF0" font-size="10" font-family="Inter">🟢 Open  🔴 Closed  🟡 Busy</text>`;
   svg += '</svg>';
   container.innerHTML = svg;
 }
@@ -890,6 +910,16 @@ function getAINavigation() {
       <p>💡 Tip: Follow the blue floor markers for the fastest path.</p>
     </div>`;
   sendChatMessage('fan', `I need directions from ${from} to ${to} in the stadium.`);
+  
+  // Trigger SVG Path Animation
+  state.activeNavPath = true;
+  renderGateMap('gate-map');
+  
+  // Clean up path after 4 seconds
+  setTimeout(() => {
+    state.activeNavPath = false;
+    renderGateMap('gate-map');
+  }, 4000);
 }
 
 // ─────────────────────────────────
