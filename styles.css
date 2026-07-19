@@ -1879,12 +1879,14 @@ a, button, select, input[type="radio"], input[type="checkbox"], .card, .chat-chi
   margin-bottom: 0;
 }
 /* Card Spans for Bento */
-#command-center .dashboard-grid > div:nth-child(1) { grid-column: span 8; } /* Heatmap */
-#command-center .dashboard-grid > div:nth-child(2) { grid-column: span 12; } /* Incidents */
-#command-center .dashboard-grid > div:nth-child(3) { grid-column: span 4; } /* Chat */
-#command-center .dashboard-grid > div:nth-child(4) { grid-column: span 4; } /* Volunteer */
-#command-center .dashboard-grid > div:nth-child(5) { grid-column: span 4; } /* Briefing */
-#command-center .dashboard-grid > div:nth-child(6) { grid-column: span 4; } /* Sustainability */
+@media (min-width: 1024px) {
+  #command-center .dashboard-grid > div:nth-child(1) { grid-column: span 8; } /* Heatmap */
+  #command-center .dashboard-grid > div:nth-child(2) { grid-column: span 12; } /* Incidents */
+  #command-center .dashboard-grid > div:nth-child(3) { grid-column: span 4; } /* Chat */
+  #command-center .dashboard-grid > div:nth-child(4) { grid-column: span 4; } /* Volunteer */
+  #command-center .dashboard-grid > div:nth-child(5) { grid-column: span 4; } /* Briefing */
+  #command-center .dashboard-grid > div:nth-child(6) { grid-column: span 4; } /* Sustainability */
+}
 
 /* Crowd Density Viz Improvements */
 .density-bar {
