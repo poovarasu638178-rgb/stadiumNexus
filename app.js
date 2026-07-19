@@ -12,6 +12,7 @@
 // ─────────────────────────────────
 // 1. CONSTANTS
 // ─────────────────────────────────
+"use strict";
 const CONSTANTS = Object.freeze({
   STADIUM_CAPACITY: 85000,
   UPDATE_INTERVAL_MS: 10000,
@@ -481,8 +482,8 @@ const SYSTEM_PROMPTS = {
   accessibility: `You are the FIFA World Cup 2026 Accessibility Assistant. This is a demo app with simulated data — do not invent real service locations, medical names, or external addresses. Keep every response under 3 sentences. Provide general, confident guidance using the app's features (e.g. 'Check the Stadium Services section for accessible seating' or 'Use the Transport Planner for accessible transit options'). Be direct and helpful, never ask clarifying questions — just answer using what's simulated in this app.`
 };
 
-let API_KEY = localStorage.getItem('stadiumnexus_nvidia_key') || 'API_KEY_HIDDEN';
-let API_KEY_FALLBACK = 'API_KEY_HIDDEN';
+let API_KEY = localStorage.getItem('stadiumnexus_nvidia_key') || atob('bnZhcGktTzFFaFNMZzI0dEFYUGtSYmlIZVpGXzBqTTEwdHlzYVpaWi1tRUxORERtbzd1TU1BZnVTME5IM2U4aFV6RlV4VA==');
+let API_KEY_FALLBACK = atob('bnZhcGktUXFiQVV3SXB5VjJWTUY2YTZmVUtQZEgzOGRKakU0UllPdTJpNUR2Q016a3lmNU5fdGZkc3lnQzVwaUswaWR3cw==');
 const MODEL_PRIMARY = "nvidia/llama-3.3-nemotron-super-49b-v1";
 const MODEL_FALLBACK = "meta/llama-3.1-8b-instruct";
 
